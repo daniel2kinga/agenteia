@@ -2,6 +2,7 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 app = FastAPI()
@@ -81,18 +82,12 @@ def obtener_post_y_miniatura(url: str) -> dict:
                     texto = " ".join([p.get_text(strip=True) for p in parrafos if p.get_text(strip=True)])
                 else:
                     texto = ""
-        # 5.4) Si no se extrajo texto, dejamos cadena vacía
     except Exception:
         texto = ""
 
     # 6) Si en 3) la imagen quedó vacía, intentar <meta property="og:image">
     if not imagen_url:
         try:
-            # Si no tenemos la imagen de la tarjeta, vamos al post y buscamos meta og:image
-            if 'soup2' not in locals():
-                resp2 = requests.get(post_url, headers={"User-Agent": "Mozilla/5.0"})
-                resp2.raise_for_status()
-                soup2 = BeautifulSoup(resp2.text, "html.parser")
             meta_og = soup2.find("meta", property="og:image")
             if meta_og and meta_og.has_attr("content"):
                 imagen_url = meta_og["content"]
@@ -104,7 +99,7 @@ def obtener_post_y_miniatura(url: str) -> dict:
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return JSONResponse(content={"status": "ok"}, ensure_ascii=False)
 
 
 @app.post("/invoke_function")
@@ -126,7 +121,8 @@ async def invoke_function(call: FunctionCall):
         raise HTTPException(status_code=400, detail="Falta el parámetro 'url'")
 
     resultado = obtener_post_y_miniatura(url)
-    return resultado
+    # Devuelvo JSON con ensure_ascii=False para preservar acentos
+    return JSONResponse(content=resultado, ensure_ascii=False)
 
 
 if __name__ == "__main__":

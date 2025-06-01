@@ -6,9 +6,11 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
+
 class FunctionCall(BaseModel):
     name: str
     arguments: dict
+
 
 def obtener_post_y_miniatura(url: str) -> dict:
     """
@@ -114,3 +116,6 @@ async def invoke_function(call: FunctionCall):
 
 
 if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

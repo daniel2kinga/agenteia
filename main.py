@@ -2,7 +2,7 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel
 
 app = FastAPI()
@@ -99,7 +99,7 @@ def obtener_post_y_miniatura(url: str) -> dict:
 
 @app.get("/health")
 def health_check():
-    return JSONResponse(content={"status": "ok"}, ensure_ascii=False)
+    return ORJSONResponse({"status": "ok"})
 
 
 @app.post("/invoke_function")
@@ -121,8 +121,7 @@ async def invoke_function(call: FunctionCall):
         raise HTTPException(status_code=400, detail="Falta el parámetro 'url'")
 
     resultado = obtener_post_y_miniatura(url)
-    # Devuelvo JSON con ensure_ascii=False para preservar acentos
-    return JSONResponse(content=resultado, ensure_ascii=False)
+    return ORJSONResponse(resultado)
 
 
 if __name__ == "__main__":

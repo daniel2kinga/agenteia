@@ -99,7 +99,8 @@ def obtener_post_y_miniatura(url: str) -> dict:
 
 @app.get("/health")
 def health_check():
-    return ORJSONResponse({"status": "ok"})
+    # forzamos application/json; charset=utf-8
+    return ORJSONResponse({"status": "ok"}, media_type="application/json; charset=utf-8")
 
 
 @app.post("/invoke_function")
@@ -121,7 +122,8 @@ async def invoke_function(call: FunctionCall):
         raise HTTPException(status_code=400, detail="Falta el parámetro 'url'")
 
     resultado = obtener_post_y_miniatura(url)
-    return ORJSONResponse(resultado)
+    # devolvemos JSON con charset UTF-8 explícito
+    return ORJSONResponse(resultado, media_type="application/json; charset=utf-8")
 
 
 if __name__ == "__main__":

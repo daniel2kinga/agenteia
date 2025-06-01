@@ -21,7 +21,9 @@ def obtener_post_y_miniatura(url: str) -> dict:
        - Primero intenta todos los <p> dentro de `div.elementor-widget-container`.
        - Si no hay párrafos allí, intenta `div.entry-content p`.
        - Si tampoco hay, extrae todos los <p> dentro de `<article>`.
-    5) Devuelve {"texto": "...", "imagen_url": "..."}.
+    5) Si en 3) la `imagen_url` quedó vacía, entonces:
+       - Hace GET a la página del post y busca <meta property="og:image"> para el fallback.
+    6) Devuelve {"texto": "...", "imagen_url": "..."}.
     """
     # 1) Descargar la página principal
     try:
@@ -37,7 +39,7 @@ def obtener_post_y_miniatura(url: str) -> dict:
     if not tarjeta:
         return {"texto": "", "imagen_url": "", "error": "No se encontró ninguna <div class='eael-grid-post-holder-inner'>."}
 
-    # 3) Extraer la URL de la miniatura
+    # 3) Extraer la URL de la miniatura desde la tarjeta
     img_el = tarjeta.select_one("img.entered.lazyloaded") or tarjeta.select_one("img")
     imagen_url = ""
     if img_el:
@@ -79,8 +81,23 @@ def obtener_post_y_miniatura(url: str) -> dict:
                     texto = " ".join([p.get_text(strip=True) for p in parrafos if p.get_text(strip=True)])
                 else:
                     texto = ""
+        # 5.4) Si no se extrajo texto, dejamos cadena vacía
     except Exception:
         texto = ""
+
+    # 6) Si en 3) la imagen quedó vacía, intentar <meta property="og:image">
+    if not imagen_url:
+        try:
+            # Si no tenemos la imagen de la tarjeta, vamos al post y buscamos meta og:image
+            if 'soup2' not in locals():
+                resp2 = requests.get(post_url, headers={"User-Agent": "Mozilla/5.0"})
+                resp2.raise_for_status()
+                soup2 = BeautifulSoup(resp2.text, "html.parser")
+            meta_og = soup2.find("meta", property="og:image")
+            if meta_og and meta_og.has_attr("content"):
+                imagen_url = meta_og["content"]
+        except Exception:
+            pass
 
     return {"texto": texto, "imagen_url": imagen_url}
 
